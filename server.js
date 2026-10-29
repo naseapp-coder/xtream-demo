@@ -1,4 +1,6 @@
 const express = require('express');
+const https = require('https');
+const http = require('http');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -10,16 +12,10 @@ const CREDENTIALS = {
 
 const STABLE_VOD_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-// Gerçek Canlı Yayın (Live Stream - ENDLIST olmayan) URL'leri
-const genuineLivePool = [
-    { name: "NASA TV Canlı", icon: "https://www.nasa.gov/wp-content/uploads/2023/06/nasa-logo-web-rgb.png", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8" },
-    { name: "Apple BipBop Live Test", icon: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=500", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8" },
-    { name: "Akamai Live Stream Test", icon: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500", url: "https://cph-p2p-ms.akamaized.net/hls/live/2000341/test/index.m3u8" },
-    { name: "NASA Public Feed 2", icon: "https://www.nasa.gov/wp-content/uploads/2023/06/nasa-logo-web-rgb.png", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8" },
-    { name: "Apple Live Backup", icon: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8" }
-];
+// Canlı TV için kullanılacak ana kaynak video (Arşiv MP4)
+const MASTER_LIVE_SOURCE = "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4";
 
-// %100 Temiz Sci-Fi Posterler
+// Temiz Sci-Fi Posterler
 const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800",
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
@@ -31,24 +27,23 @@ const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
-// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Gerçek Canlı Kanal
+// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Kanal
 const allLiveStreams = [];
 let liveIdCounter = 100;
 for (let cat = 1; cat <= 5; cat++) {
     for (let i = 1; i <= 5; i++) {
         liveIdCounter++;
-        const template = genuineLivePool[(i - 1) % genuineLivePool.length];
         allLiveStreams.push({
             num: allLiveStreams.length + 1,
-            name: `Canlı TV ${cat} - Kanal ${i} (${template.name})`,
+            name: `Canlı TV ${cat} - Kanal ${i} (Kesintisiz Yayın)`,
             stream_type: "live",
             stream_id: liveIdCounter,
-            stream_icon: template.icon,
+            stream_icon: safeSciFiPosters[(liveIdCounter) % safeSciFiPosters.length],
             epg_channel_id: `ch_${cat}_${i}`,
             added: "1680000000",
             category_id: `${cat}`,
-            direct_source: template.url,
-            container_extension: "m3u8"
+            direct_source: `/live-proxy/${liveIdCounter}`,
+            container_extension: "mp4"
         });
     }
 }
@@ -106,7 +101,6 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // Canlı TV Kategorileri
     if (action === 'get_live_categories') {
         return res.json([
             { category_id: "1", category_name: "Canlı TV 1", parent_id: 0 },
@@ -119,10 +113,15 @@ app.get('/player_api.php', (req, res) => {
 
     if (action === 'get_live_streams') {
         const catId = req.query.category_id;
+        const hostUrl = req.protocol + '://' + req.get('host');
+        const mapped = allLiveStreams.map(s => ({
+            ...s,
+            direct_source: `${hostUrl}/live-proxy/${s.stream_id}`
+        }));
         if (catId) {
-            return res.json(allLiveStreams.filter(s => s.category_id === catId));
+            return res.json(mapped.filter(s => s.category_id === catId));
         }
-        return res.json(allLiveStreams);
+        return res.json(mapped);
     }
 
     // Film Kategorileri (Test 1 - Test 5)
@@ -229,14 +228,25 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
+// CANLI TV İÇİN BOYUTSUZ PROXY (Oynatıcı bunu Canlı Yayın sanacak)
+app.get('/live-proxy/:id', (req, res) => {
+    https.get(MASTER_LIVE_SOURCE, (externalRes) => {
+        res.writeHead(200, {
+            'Content-Type': 'video/mp4',
+            'Access-Control-Allow-Origin': '*'
+            // DİKKAT: Content-Length Kasıtlı Olarak Verilmiyor! Bu sayede ExoPlayer süresiz Canlı Yayın sanacak.
+        });
+        externalRes.pipe(res);
+    }).on('error', (err) => {
+        res.status(500).send("Proxy error");
+    });
+});
+
 // Yönlendirmeler
 app.get('/live/:username/:password/:streamParam', (req, res) => {
+    const hostUrl = req.protocol + '://' + req.get('host');
     const rawId = req.params.streamParam.split('.')[0];
-    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
-    if (stream) {
-        return res.redirect(301, stream.direct_source);
-    }
-    return res.redirect(301, "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8");
+    return res.redirect(301, `${hostUrl}/live-proxy/${rawId}`);
 });
 
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
@@ -249,7 +259,7 @@ app.get('/series/:username/:password/:seriesParam', (req, res) => {
 
 app.get('/:username/:password/:param', (req, res, next) => {
     const { username } = req.params;
-    if (['player_api.php', 'live', 'movie', 'series'].includes(username)) {
+    if (['player_api.php', 'live', 'movie', 'series', 'live-proxy'].includes(username)) {
         return next();
     }
     return res.redirect(301, STABLE_VOD_URL);
