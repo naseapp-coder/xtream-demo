@@ -10,15 +10,16 @@ const CREDENTIALS = {
 
 const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-// %100 Temiz, Yazısız, Sinema ve Projektör Temalı Telifsiz Görseller
-const safeCinematicPosters = [
-    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800", // Sinema salonu / perde
+// %100 Temiz, Sci-Fi (Bilim Kurgu) ve Sinematik Telifsiz Görseller
+const safeSciFiPosters = [
+    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800", // Sinema perdesi
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800", // Film projektörü
     "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800", // Sinematik ışık
-    "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800", // Sinema atmosferi
-    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800", // Film şeridi / renk
-    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800", // Koltuklar
-    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"  // Sinema arka planı
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800", // Sci-Fi Uzay / Gezegen
+    "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800", // Bilim kurgu nebula
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800", // Parlayan teknoloji / sci-fi
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800", // Sinema salonu
+    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"  // Soyut sinema
 ];
 
 // 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
@@ -29,14 +30,14 @@ for (let cat = 1; cat <= 5; cat++) {
         movieIdCounter++;
         allMovies.push({
             stream_id: movieIdCounter,
-            name: `Test ${cat} - Sinematik Film ${i} (HD)`,
-            title: `Test ${cat} - Sinematik Film ${i} (HD)`,
+            name: `Test ${cat} - Sci-Fi Film ${i} (HD)`,
+            title: `Test ${cat} - Sci-Fi Film ${i} (HD)`,
             stream_type: "movie",
-            stream_icon: safeCinematicPosters[(movieIdCounter) % safeCinematicPosters.length],
+            stream_icon: safeSciFiPosters[(movieIdCounter) % safeSciFiPosters.length],
             rating: "9.6",
             rating_count_tot: 2400,
             year: 2024,
-            genre: `Animation, Open Source ${cat}`,
+            genre: `Sci-Fi, Space ${cat}`,
             category_id: `${cat * 10}`,
             video_url: STABLE_VIDEO_URL,
             container_extension: "m3u8"
@@ -49,12 +50,12 @@ const allSeries = [];
 for (let cat = 1; cat <= 5; cat++) {
     allSeries.push({
         series_id: 500 + cat,
-        name: `Test Dizi ${cat} - Orijinal Seri`,
-        cover: safeCinematicPosters[(cat + 2) % safeCinematicPosters.length],
+        name: `Test Dizi ${cat} - Uzay Serisi`,
+        cover: safeSciFiPosters[(cat + 3) % safeSciFiPosters.length],
         category_id: `${cat * 100}`,
         rating: "9.9",
-        genre: `Animation, Open Source ${cat}`,
-        plot: `Bu açık kaynaklı yapım Blender Foundation tarafından Creative Commons lisansıyla sunulmuştur.`
+        genre: `Sci-Fi, Space ${cat}`,
+        plot: `Bu açık kaynaklı bilim kurgu yapımı Blender Foundation tarafından Creative Commons lisansıyla sunulmuştur.`
     });
 }
 
@@ -97,7 +98,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allMovies);
     }
 
-    // Film Detayı (Blender Foundation Atıfları Eklendi)
+    // Film Detayı
     if (action === 'get_vod_info') {
         const vodId = parseInt(req.query.vod_id);
         const movie = allMovies.find(m => m.stream_id === vodId) || allMovies[0];
@@ -105,7 +106,7 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: movie.name,
                 movie_image: movie.stream_icon,
-                description: "Bu açık kaynaklı yüksek kaliteli demo video yapımı Blender Foundation tarafından üretilmiş olup Creative Commons lisansıyla sunulmaktadır.",
+                description: "Bu açık kaynaklı yüksek kaliteli bilim kurgu demo video yapımı Blender Foundation tarafından üretilmiş olup Creative Commons lisansıyla sunulmaktadır.",
                 genre: movie.genre,
                 releasedate: `${movie.year}-01-01`,
                 rating: movie.rating,
@@ -140,7 +141,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allSeries);
     }
 
-    // Dizi Detayı (5 Bölüm + Blender Atıf)
+    // Dizi Detayı (5 Bölüm)
     if (action === 'get_series_info') {
         const seriesId = parseInt(req.query.series_id);
         const series = allSeries.find(s => s.series_id === seriesId) || allSeries[0];
@@ -164,7 +165,7 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: series.name,
                 cover: series.cover,
-                plot: "Bu açık kaynaklı mini dizi Blender Foundation katkılarıyla hazırlanmıştır.",
+                plot: "Bu açık kaynaklı bilim kurgu mini dizisi Blender Foundation katkılarıyla hazırlanmıştır.",
                 genre: series.genre,
                 rating: series.rating,
                 director: "Blender Foundation",
@@ -179,7 +180,7 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    res.json({ error: "Unknown action" });
+.json({ error: "Unknown action" });
 });
 
 // Yönlendirmeler
