@@ -8,15 +8,18 @@ const CREDENTIALS = {
     server_name: "Sinetech Pro IPTV Demo"
 };
 
-// En Stabil Çalışan Link (JW Player Big Buck Bunny / M3U8)
 const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-const moviePosters = [
-    "https://peach.blender.org/wp-content/uploads/title-anims-01.jpg",
-    "https://durian.blender.org/wp-content/uploads/2010/06/sintel_poster.jpg",
-    "https://mango.blender.org/wp-content/uploads/2012/12/tos_poster.jpg",
-    "https://orange.blender.org/wp-content/themes/orange/images/media_splash.jpg",
-    "https://gooseberry.blender.org/wp-content/uploads/2015/05/poster_01.jpg"
+// Yüksek Kaliteli Sinematik Telifsiz Posterler (Unsplash HD)
+const cinematicPosters = [
+    "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800",
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800",
+    "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
+    "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?w=800",
+    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800",
+    "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800",
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800",
+    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
 // 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
@@ -27,14 +30,14 @@ for (let cat = 1; cat <= 5; cat++) {
         movieIdCounter++;
         allMovies.push({
             stream_id: movieIdCounter,
-            name: `Test ${cat} - Film #${i} (HD)`,
-            title: `Test ${cat} - Film #${i} (HD)`,
+            name: `Test ${cat} - Sinematik Film ${i} (4K)`,
+            title: `Test ${cat} - Sinematik Film ${i} (4K)`,
             stream_type: "movie",
-            stream_icon: moviePosters[(i - 1) % moviePosters.length],
-            rating: "9.5",
-            rating_count_tot: 1500,
-            year: 2023,
-            genre: `Test Genre ${cat}`,
+            stream_icon: cinematicPosters[(movieIdCounter) % cinematicPosters.length],
+            rating: "9.6",
+            rating_count_tot: 2400,
+            year: 2024,
+            genre: `Action, Sci-Fi ${cat}`,
             category_id: `${cat * 10}`,
             video_url: STABLE_VIDEO_URL,
             container_extension: "m3u8"
@@ -42,17 +45,17 @@ for (let cat = 1; cat <= 5; cat++) {
     }
 }
 
-// 2. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi (Her dizide 5 bölüm)
+// 2. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi
 const allSeries = [];
 for (let cat = 1; cat <= 5; cat++) {
     allSeries.push({
         series_id: 500 + cat,
-        name: `Test Dizi ${cat} - Özel Seri`,
-        cover: moviePosters[(cat - 1) % moviePosters.length],
+        name: `Test Dizi ${cat} - Orijinal Seri`,
+        cover: cinematicPosters[cat % cinematicPosters.length],
         category_id: `${cat * 100}`,
-        rating: "9.8",
-        genre: `Drama, Sci-Fi ${cat}`,
-        plot: `Bu dizi Test ${cat} kategorisi altında yer alan 5 bölümlük özel test serisidir.`
+        rating: "9.9",
+        genre: `Drama, Mystery ${cat}`,
+        plot: `Test ${cat} kategorisi için özel hazırlanmış yüksek kaliteli 5 bölümlük mini dizi.`
     });
 }
 
@@ -72,7 +75,6 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // Canlı TV (Boş bırakıldı)
     if (action === 'get_live_categories' || action === 'get_live_streams') {
         return res.json([]);
     }
@@ -96,6 +98,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allMovies);
     }
 
+    // Film Detayı (Başlık ve Görsel düzeltildi)
     if (action === 'get_vod_info') {
         const vodId = parseInt(req.query.vod_id);
         const movie = allMovies.find(m => m.stream_id === vodId) || allMovies[0];
@@ -103,12 +106,19 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: movie.name,
                 movie_image: movie.stream_icon,
-                description: "Test film açıklaması ve detayları.",
+                description: "Sinematik yüksek kaliteli telifsiz demo film içeriğidir.",
                 genre: movie.genre,
                 releasedate: `${movie.year}-01-01`,
-                rating: movie.rating
+                rating: movie.rating,
+                director: "Test Director",
+                cast: "Test Actor"
             },
-            movie_data: { stream_id: movie.stream_id, container_extension: "m3u8" }
+            movie_data: {
+                stream_id: movie.stream_id,
+                name: movie.name,
+                stream_icon: movie.stream_icon,
+                container_extension: "m3u8"
+            }
         });
     }
 
@@ -131,7 +141,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allSeries);
     }
 
-    // Dizi Detayı (Her dizinin içinde 5 bölüm var)
+    // Dizi Detayı (5 Bölüm)
     if (action === 'get_series_info') {
         const seriesId = parseInt(req.query.series_id);
         const series = allSeries.find(s => s.series_id === seriesId) || allSeries[0];
@@ -171,7 +181,7 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// Yönlendirmeler (Film ve Diziler için stabil link)
+// Yönlendirmeler
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
