@@ -133,9 +133,13 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// UZANTI BAĞIMSIZ Canlı Yayın Yönlendirmesi (.ts, .m3u8 veya uzantısız ne gelirse gelsin)
-app.get('/live/:username/:password/:streamParam', (req, res) => {
-    const rawId = req.params.streamParam.split('.')[0]; // Uzantıyı temizle
+// 1. Doğrudan Canlı Yayın İsteği: /{username}/{password}/:streamParam (Örn: /demosinetech/demosinetech/101)
+app.get('/:username/:password/:streamParam', (req, res, next) => {
+    const { username, password } = req.params;
+    if (username === 'player_api.php' || username === 'live' || username === 'movie' || username === 'series') {
+        return next();
+    }
+    const rawId = req.params.streamParam.split('.')[0];
     const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
     if (stream) {
         return res.redirect(stream.direct_source);
@@ -143,9 +147,19 @@ app.get('/live/:username/:password/:streamParam', (req, res) => {
     return res.redirect('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
 });
 
-// UZANTI BAĞIMSIZ VOD Film Yönlendirmesi (.mp4, .mkv veya uzantısız ne gelirse gelsin)
+// 2. /live/{username}/{password}/:streamParam
+app.get('/live/:username/:password/:streamParam', (req, res) => {
+    const rawId = req.params.streamParam.split('.')[0];
+    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
+    if (stream) {
+        return res.redirect(stream.direct_source);
+    }
+    return res.redirect('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+});
+
+// 3. /movie/{username}/{password}/:movieParam
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
-    const rawId = req.params.movieParam.split('.')[0]; // Uzantıyı temizle
+    const rawId = req.params.movieParam.split('.')[0];
     const movie = allMovies.find(m => m.stream_id.toString() === rawId);
     if (movie) {
         return res.redirect(movie.video_url);
