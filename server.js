@@ -10,8 +10,8 @@ const CREDENTIALS = {
 
 const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-// Yüksek Kaliteli Sinematik Telifsiz Posterler (Unsplash HD)
-const cinematicPosters = [
+// %100 Temiz, Markasız ve Telifsiz Sinematik Posterler (Unsplash HD)
+const cleanCinematicPosters = [
     "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800",
     "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800",
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
@@ -30,10 +30,10 @@ for (let cat = 1; cat <= 5; cat++) {
         movieIdCounter++;
         allMovies.push({
             stream_id: movieIdCounter,
-            name: `Test ${cat} - Sinematik Film ${i} (4K)`,
-            title: `Test ${cat} - Sinematik Film ${i} (4K)`,
+            name: `Test ${cat} - Sinematik Film ${i} (HD)`,
+            title: `Test ${cat} - Sinematik Film ${i} (HD)`,
             stream_type: "movie",
-            stream_icon: cinematicPosters[(movieIdCounter) % cinematicPosters.length],
+            stream_icon: cleanCinematicPosters[(movieIdCounter) % cleanCinematicPosters.length],
             rating: "9.6",
             rating_count_tot: 2400,
             year: 2024,
@@ -51,7 +51,7 @@ for (let cat = 1; cat <= 5; cat++) {
     allSeries.push({
         series_id: 500 + cat,
         name: `Test Dizi ${cat} - Orijinal Seri`,
-        cover: cinematicPosters[cat % cinematicPosters.length],
+        cover: cleanCinematicPosters[(cat + 2) % cleanCinematicPosters.length],
         category_id: `${cat * 100}`,
         rating: "9.9",
         genre: `Drama, Mystery ${cat}`,
@@ -98,7 +98,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allMovies);
     }
 
-    // Film Detayı (Başlık ve Görsel düzeltildi)
+    // Film Detayı
     if (action === 'get_vod_info') {
         const vodId = parseInt(req.query.vod_id);
         const movie = allMovies.find(m => m.stream_id === vodId) || allMovies[0];
