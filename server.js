@@ -1,6 +1,4 @@
 const express = require('express');
-const https = require('https');
-const http = require('http');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
@@ -10,12 +8,9 @@ const CREDENTIALS = {
     server_name: "Sinetech Pro IPTV Demo"
 };
 
-const STABLE_VOD_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
+const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-// Canlı TV için kullanılacak ana kaynak video (Arşiv MP4)
-const MASTER_LIVE_SOURCE = "https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4";
-
-// Temiz Sci-Fi Posterler
+// %100 Temiz, Sci-Fi ve Sinematik Telifsiz Görseller
 const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800",
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
@@ -27,28 +22,7 @@ const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
-// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Kanal
-const allLiveStreams = [];
-let liveIdCounter = 100;
-for (let cat = 1; cat <= 5; cat++) {
-    for (let i = 1; i <= 5; i++) {
-        liveIdCounter++;
-        allLiveStreams.push({
-            num: allLiveStreams.length + 1,
-            name: `Canlı TV ${cat} - Kanal ${i} (Kesintisiz Yayın)`,
-            stream_type: "live",
-            stream_id: liveIdCounter,
-            stream_icon: safeSciFiPosters[(liveIdCounter) % safeSciFiPosters.length],
-            epg_channel_id: `ch_${cat}_${i}`,
-            added: "1680000000",
-            category_id: `${cat}`,
-            direct_source: `/live-proxy/${liveIdCounter}`,
-            container_extension: "mp4"
-        });
-    }
-}
-
-// 2. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
+// 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
 const allMovies = [];
 let movieIdCounter = 3000;
 for (let cat = 1; cat <= 5; cat++) {
@@ -65,13 +39,13 @@ for (let cat = 1; cat <= 5; cat++) {
             year: 2024,
             genre: `Sci-Fi, Space ${cat}`,
             category_id: `${cat * 10}`,
-            video_url: STABLE_VOD_URL,
+            video_url: STABLE_VIDEO_URL,
             container_extension: "m3u8"
         });
     }
 }
 
-// 3. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi
+// 2. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi (Her birinde 5 bölüm)
 const allSeries = [];
 for (let cat = 1; cat <= 5; cat++) {
     allSeries.push({
@@ -101,27 +75,9 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    if (action === 'get_live_categories') {
-        return res.json([
-            { category_id: "1", category_name: "Canlı TV 1", parent_id: 0 },
-            { category_id: "2", category_name: "Canlı TV 2", parent_id: 0 },
-            { category_id: "3", category_name: "Canlı TV 3", parent_id: 0 },
-            { category_id: "4", category_name: "Canlı TV 4", parent_id: 0 },
-            { category_id: "5", category_name: "Canlı TV 5", parent_id: 0 }
-        ]);
-    }
-
-    if (action === 'get_live_streams') {
-        const catId = req.query.category_id;
-        const hostUrl = req.protocol + '://' + req.get('host');
-        const mapped = allLiveStreams.map(s => ({
-            ...s,
-            direct_source: `${hostUrl}/live-proxy/${s.stream_id}`
-        }));
-        if (catId) {
-            return res.json(mapped.filter(s => s.category_id === catId));
-        }
-        return res.json(mapped);
+    // Canlı TV (Tamamen Kaldırıldı)
+    if (action === 'get_live_categories' || action === 'get_live_streams') {
+        return res.json([]);
     }
 
     // Film Kategorileri (Test 1 - Test 5)
@@ -143,7 +99,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allMovies);
     }
 
-    // Film Detayı
+    // Film Detayı (Blender Atıfları ile)
     if (action === 'get_vod_info') {
         const vodId = parseInt(req.query.vod_id);
         const movie = allMovies.find(m => m.stream_id === vodId) || allMovies[0];
@@ -228,41 +184,21 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// CANLI TV İÇİN BOYUTSUZ PROXY (Oynatıcı bunu Canlı Yayın sanacak)
-app.get('/live-proxy/:id', (req, res) => {
-    https.get(MASTER_LIVE_SOURCE, (externalRes) => {
-        res.writeHead(200, {
-            'Content-Type': 'video/mp4',
-            'Access-Control-Allow-Origin': '*'
-            // DİKKAT: Content-Length Kasıtlı Olarak Verilmiyor! Bu sayede ExoPlayer süresiz Canlı Yayın sanacak.
-        });
-        externalRes.pipe(res);
-    }).on('error', (err) => {
-        res.status(500).send("Proxy error");
-    });
-});
-
 // Yönlendirmeler
-app.get('/live/:username/:password/:streamParam', (req, res) => {
-    const hostUrl = req.protocol + '://' + req.get('host');
-    const rawId = req.params.streamParam.split('.')[0];
-    return res.redirect(301, `${hostUrl}/live-proxy/${rawId}`);
-});
-
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
-    return res.redirect(301, STABLE_VOD_URL);
+    return res.redirect(301, STABLE_VIDEO_URL);
 });
 
 app.get('/series/:username/:password/:seriesParam', (req, res) => {
-    return res.redirect(301, STABLE_VOD_URL);
+    return res.redirect(301, STABLE_VIDEO_URL);
 });
 
 app.get('/:username/:password/:param', (req, res, next) => {
     const { username } = req.params;
-    if (['player_api.php', 'live', 'movie', 'series', 'live-proxy'].includes(username)) {
+    if (['player_api.php', 'live', 'movie', 'series'].includes(username)) {
         return next();
     }
-    return res.redirect(301, STABLE_VOD_URL);
+    return res.redirect(301, STABLE_VIDEO_URL);
 });
 
 app.listen(PORT, () => console.log(`Xtream Mock Server running on port ${PORT}`));
