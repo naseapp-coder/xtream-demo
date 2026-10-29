@@ -8,10 +8,18 @@ const CREDENTIALS = {
     server_name: "Sinetech Pro IPTV Demo"
 };
 
-const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
-const APPLE_LIVE_TEST_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8";
+const STABLE_VOD_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
 
-// %100 Temiz Sci-Fi ve Sinematik Posterler
+// Gerçek Canlı Yayın (Live Stream - ENDLIST olmayan) URL'leri
+const genuineLivePool = [
+    { name: "NASA TV Canlı", icon: "https://www.nasa.gov/wp-content/uploads/2023/06/nasa-logo-web-rgb.png", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8" },
+    { name: "Apple BipBop Live Test", icon: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=500", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8" },
+    { name: "Akamai Live Stream Test", icon: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500", url: "https://cph-p2p-ms.akamaized.net/hls/live/2000341/test/index.m3u8" },
+    { name: "NASA Public Feed 2", icon: "https://www.nasa.gov/wp-content/uploads/2023/06/nasa-logo-web-rgb.png", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8" },
+    { name: "Apple Live Backup", icon: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8" }
+];
+
+// %100 Temiz Sci-Fi Posterler
 const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800",
     "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
@@ -23,22 +31,23 @@ const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
-// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Kanal (Apple Test Linki)
+// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Gerçek Canlı Kanal
 const allLiveStreams = [];
 let liveIdCounter = 100;
 for (let cat = 1; cat <= 5; cat++) {
     for (let i = 1; i <= 5; i++) {
         liveIdCounter++;
+        const template = genuineLivePool[(i - 1) % genuineLivePool.length];
         allLiveStreams.push({
             num: allLiveStreams.length + 1,
-            name: `Canlı TV ${cat} - Kanal ${i} (Apple Test)`,
+            name: `Canlı TV ${cat} - Kanal ${i} (${template.name})`,
             stream_type: "live",
             stream_id: liveIdCounter,
-            stream_icon: safeSciFiPosters[(liveIdCounter) % safeSciFiPosters.length],
+            stream_icon: template.icon,
             epg_channel_id: `ch_${cat}_${i}`,
             added: "1680000000",
             category_id: `${cat}`,
-            direct_source: APPLE_LIVE_TEST_URL,
+            direct_source: template.url,
             container_extension: "m3u8"
         });
     }
@@ -61,7 +70,7 @@ for (let cat = 1; cat <= 5; cat++) {
             year: 2024,
             genre: `Sci-Fi, Space ${cat}`,
             category_id: `${cat * 10}`,
-            video_url: STABLE_VIDEO_URL,
+            video_url: STABLE_VOD_URL,
             container_extension: "m3u8"
         });
     }
@@ -222,15 +231,20 @@ app.get('/player_api.php', (req, res) => {
 
 // Yönlendirmeler
 app.get('/live/:username/:password/:streamParam', (req, res) => {
-    return res.redirect(301, APPLE_LIVE_TEST_URL);
+    const rawId = req.params.streamParam.split('.')[0];
+    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
+    if (stream) {
+        return res.redirect(301, stream.direct_source);
+    }
+    return res.redirect(301, "https://ntv1.akamaized.net/hls/live/2014075/NASA-NTV1-HLS/master.m3u8");
 });
 
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
-    return res.redirect(301, STABLE_VIDEO_URL);
+    return res.redirect(301, STABLE_VOD_URL);
 });
 
 app.get('/series/:username/:password/:seriesParam', (req, res) => {
-    return res.redirect(301, STABLE_VIDEO_URL);
+    return res.redirect(301, STABLE_VOD_URL);
 });
 
 app.get('/:username/:password/:param', (req, res, next) => {
@@ -238,7 +252,7 @@ app.get('/:username/:password/:param', (req, res, next) => {
     if (['player_api.php', 'live', 'movie', 'series'].includes(username)) {
         return next();
     }
-    return res.redirect(301, STABLE_VIDEO_URL);
+    return res.redirect(301, STABLE_VOD_URL);
 });
 
 app.listen(PORT, () => console.log(`Xtream Mock Server running on port ${PORT}`));
