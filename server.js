@@ -8,61 +8,51 @@ const CREDENTIALS = {
     server_name: "Sinetech Pro IPTV Demo"
 };
 
-// 1. Gerçek Canlı Yayın Akışları (Live TV - M3U8 HLS)
-const liveStreamsPool = [
-    { name: "NASA TV HD (Uzay Canlı Yayını)", icon: "https://www.nasa.gov/wp-content/uploads/2023/06/nasa-logo-web-rgb.png", url: "https://ntv1.akamaized.net/hls/live/2014075/NASA-TV-HD-1/master.m3u8" },
-    { name: "Global Test Live Feed 1", icon: "https://test-streams.mux.dev/x36xhzz/poster.jpg", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" },
-    { name: "Akamai Live Stream Test", icon: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=500", url: "https://cph-p2p-ms.akamaized.net/hls/live/2000341/test/index.m3u8" },
-    { name: "Apple Event Test Stream", icon: "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=500", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_advanced/bipbop_16x9_variant.m3u8" },
-    { name: "Studio Broadcast Feed", icon: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500", url: "https://test-streams.mux.dev/playlist.m3u8" }
+// En Stabil Çalışan Link (JW Player Big Buck Bunny / M3U8)
+const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
+
+const moviePosters = [
+    "https://peach.blender.org/wp-content/uploads/title-anims-01.jpg",
+    "https://durian.blender.org/wp-content/uploads/2010/06/sintel_poster.jpg",
+    "https://mango.blender.org/wp-content/uploads/2012/12/tos_poster.jpg",
+    "https://orange.blender.org/wp-content/themes/orange/images/media_splash.jpg",
+    "https://gooseberry.blender.org/wp-content/uploads/2015/05/poster_01.jpg"
 ];
 
-// 2. Blender Vakfı & Apple Açık Kaynak Kaliteli Filmler (VOD)
-const movieVideosPool = [
-    { title: "Big Buck Bunny (Blender Vakfı - 1080p)", url: "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8", poster: "https://peach.blender.org/wp-content/uploads/title-anims-01.jpg" },
-    { title: "Sintel (Destansı Animasyon Filmi)", url: "https://demo.unified-streaming.com/k8s/features/stable/video/sintel/sintel.ism/.m3u8", poster: "https://durian.blender.org/wp-content/uploads/2010/06/sintel_poster.jpg" },
-    { title: "Tears of Steel (Bilim Kurgu / VFX)", url: "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8", poster: "https://mango.blender.org/wp-content/uploads/2012/12/tos_poster.jpg" },
-    { title: "Elephant's Dream (İlk Açık Film)", url: "https://demo.unified-streaming.com/k8s/features/stable/video/elephants-dream/elephants-dream.ism/.m3u8", poster: "https://orange.blender.org/wp-content/themes/orange/images/media_splash.jpg" },
-    { title: "Apple Advanced Video Test", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/adv_dv_atmos/index.m3u8", poster: "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=500" }
-];
-
-// 5 Kategori x 5 Kanal = 25 Canlı Kanal
-const allLiveStreams = [];
-let streamIdCounter = 100;
+// 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
+const allMovies = [];
+let movieIdCounter = 3000;
 for (let cat = 1; cat <= 5; cat++) {
     for (let i = 1; i <= 5; i++) {
-        streamIdCounter++;
-        const template = liveStreamsPool[(i - 1) % liveStreamsPool.length];
-        allLiveStreams.push({
-            num: allLiveStreams.length + 1,
-            name: `Canlı TV ${cat} - Kanal ${i} (${template.name})`,
-            stream_type: "live",
-            stream_id: streamIdCounter,
-            stream_icon: template.icon,
-            epg_channel_id: `ch_${cat}_${i}`,
-            added: "1680000000",
-            category_id: `${cat}`,
-            direct_source: template.url
+        movieIdCounter++;
+        allMovies.push({
+            stream_id: movieIdCounter,
+            name: `Test ${cat} - Film #${i} (HD)`,
+            title: `Test ${cat} - Film #${i} (HD)`,
+            stream_type: "movie",
+            stream_icon: moviePosters[(i - 1) % moviePosters.length],
+            rating: "9.5",
+            rating_count_tot: 1500,
+            year: 2023,
+            genre: `Test Genre ${cat}`,
+            category_id: `${cat * 10}`,
+            video_url: STABLE_VIDEO_URL,
+            container_extension: "m3u8"
         });
     }
 }
 
-// 30 Adet VOD Film
-const allMovies = [];
-for (let i = 1; i <= 30; i++) {
-    const template = movieVideosPool[(i - 1) % movieVideosPool.length];
-    allMovies.push({
-        stream_id: 3000 + i,
-        name: `Blender & Apple Film #${i}: ${template.title}`,
-        title: `Blender & Apple Film #${i}: ${template.title}`,
-        stream_type: "movie",
-        stream_icon: template.poster,
-        rating: "9.2",
-        rating_count_tot: 2500,
-        year: 2023,
-        genre: "Animation, Sci-Fi, Open Source",
-        category_id: "10",
-        video_url: template.url
+// 2. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi (Her dizide 5 bölüm)
+const allSeries = [];
+for (let cat = 1; cat <= 5; cat++) {
+    allSeries.push({
+        series_id: 500 + cat,
+        name: `Test Dizi ${cat} - Özel Seri`,
+        cover: moviePosters[(cat - 1) % moviePosters.length],
+        category_id: `${cat * 100}`,
+        rating: "9.8",
+        genre: `Drama, Sci-Fi ${cat}`,
+        plot: `Bu dizi Test ${cat} kategorisi altında yer alan 5 bölümlük özel test serisidir.`
     });
 }
 
@@ -82,31 +72,27 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    if (action === 'get_live_categories') {
-        return res.json([
-            { category_id: "1", category_name: "Canlı TV 1 (NASA & Uzay)", parent_id: 0 },
-            { category_id: "2", category_name: "Canlı TV 2 (Global Feed)", parent_id: 0 },
-            { category_id: "3", category_name: "Canlı TV 3 (Akamai Test)", parent_id: 0 },
-            { category_id: "4", category_name: "Canlı TV 4 (Apple Stream)", parent_id: 0 },
-            { category_id: "5", category_name: "Canlı TV 5 (Studio Feed)", parent_id: 0 }
-        ]);
+    // Canlı TV (Boş bırakıldı)
+    if (action === 'get_live_categories' || action === 'get_live_streams') {
+        return res.json([]);
     }
 
-    if (action === 'get_live_streams') {
-        const catId = req.query.category_id;
-        if (catId) {
-            return res.json(allLiveStreams.filter(s => s.category_id === catId));
-        }
-        return res.json(allLiveStreams);
-    }
-
+    // Film Kategorileri (Test 1 - Test 5)
     if (action === 'get_vod_categories') {
         return res.json([
-            { category_id: "10", category_name: "🍿 Blender & Apple Açık Kaynak Filmler (VOD)", parent_id: 0 }
+            { category_id: "10", category_name: "Test 1 (Filmler)", parent_id: 0 },
+            { category_id: "20", category_name: "Test 2 (Filmler)", parent_id: 0 },
+            { category_id: "30", category_name: "Test 3 (Filmler)", parent_id: 0 },
+            { category_id: "40", category_name: "Test 4 (Filmler)", parent_id: 0 },
+            { category_id: "50", category_name: "Test 5 (Filmler)", parent_id: 0 }
         ]);
     }
 
     if (action === 'get_vod_streams') {
+        const catId = req.query.category_id;
+        if (catId) {
+            return res.json(allMovies.filter(m => m.category_id === catId));
+        }
         return res.json(allMovies);
     }
 
@@ -117,7 +103,7 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: movie.name,
                 movie_image: movie.stream_icon,
-                description: "Blender Vakfı ve Apple açık kaynak yüksek kaliteli film prodüksiyonudur.",
+                description: "Test film açıklaması ve detayları.",
                 genre: movie.genre,
                 releasedate: `${movie.year}-01-01`,
                 rating: movie.rating
@@ -126,39 +112,80 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
+    // Dizi Kategorileri (Test 1 - Test 5)
+    if (action === 'get_series_categories') {
+        return res.json([
+            { category_id: "100", category_name: "Test 1 (Diziler)", parent_id: 0 },
+            { category_id: "200", category_name: "Test 2 (Diziler)", parent_id: 0 },
+            { category_id: "300", category_name: "Test 3 (Diziler)", parent_id: 0 },
+            { category_id: "400", category_name: "Test 4 (Diziler)", parent_id: 0 },
+            { category_id: "500", category_name: "Test 5 (Diziler)", parent_id: 0 }
+        ]);
+    }
+
+    if (action === 'get_series') {
+        const catId = req.query.category_id;
+        if (catId) {
+            return res.json(allSeries.filter(s => s.category_id === catId));
+        }
+        return res.json(allSeries);
+    }
+
+    // Dizi Detayı (Her dizinin içinde 5 bölüm var)
+    if (action === 'get_series_info') {
+        const seriesId = parseInt(req.query.series_id);
+        const series = allSeries.find(s => s.series_id === seriesId) || allSeries[0];
+        
+        const episodesList = [];
+        for (let ep = 1; ep <= 5; ep++) {
+            episodesList.push({
+                id: `${series.series_id}0${ep}`,
+                title: `${series.name} - Sezon 1 Bölüm ${ep}`,
+                episode_num: ep,
+                season: 1,
+                container_extension: "m3u8",
+                info: {
+                    duration: "45 mins",
+                    movie_image: series.cover
+                }
+            });
+        }
+
+        return res.json({
+            info: {
+                name: series.name,
+                cover: series.cover,
+                plot: series.plot,
+                genre: series.genre,
+                rating: series.rating
+            },
+            seasons: [
+                { season_number: 1, name: "Sezon 1" }
+            ],
+            episodes: {
+                "1": episodesList
+            }
+        });
+    }
+
     res.json({ error: "Unknown action" });
 });
 
-// Yönlendirmeler
-app.get('/:username/:password/:streamParam', (req, res, next) => {
+// Yönlendirmeler (Film ve Diziler için stabil link)
+app.get('/movie/:username/:password/:movieParam', (req, res) => {
+    return res.redirect(301, STABLE_VIDEO_URL);
+});
+
+app.get('/series/:username/:password/:seriesParam', (req, res) => {
+    return res.redirect(301, STABLE_VIDEO_URL);
+});
+
+app.get('/:username/:password/:param', (req, res, next) => {
     const { username } = req.params;
-    if (username === 'player_api.php' || username === 'live' || username === 'movie' || username === 'series') {
+    if (['player_api.php', 'live', 'movie', 'series'].includes(username)) {
         return next();
     }
-    const rawId = req.params.streamParam.split('.')[0];
-    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
-    if (stream) {
-        return res.redirect(301, stream.direct_source);
-    }
-    return res.redirect(301, 'https://ntv1.akamaized.net/hls/live/2014075/NASA-TV-HD-1/master.m3u8');
-});
-
-app.get('/live/:username/:password/:streamParam', (req, res) => {
-    const rawId = req.params.streamParam.split('.')[0];
-    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
-    if (stream) {
-        return res.redirect(301, stream.direct_source);
-    }
-    return res.redirect(301, 'https://ntv1.akamaized.net/hls/live/2014075/NASA-TV-HD-1/master.m3u8');
-});
-
-app.get('/movie/:username/:password/:movieParam', (req, res) => {
-    const rawId = req.params.movieParam.split('.')[0];
-    const movie = allMovies.find(m => m.stream_id.toString() === rawId);
-    if (movie) {
-        return res.redirect(301, movie.video_url);
-    }
-    return res.redirect(301, 'https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8');
+    return res.redirect(301, STABLE_VIDEO_URL);
 });
 
 app.listen(PORT, () => console.log(`Xtream Mock Server running on port ${PORT}`));
