@@ -2,14 +2,13 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// İstenen Yeni Giriş Bilgileri
 const CREDENTIALS = {
     username: "demosinetech",
     password: "demosinetech",
     server_name: "Sinetech Pro IPTV Demo"
 };
 
-// Sağlam ve Garantili Test Linkleri (Apple & Mux & Google)
+// Sağlam Test Yayınları
 const liveStreamsPool = [
     { name: "Test Yayını HD 1", icon: "https://peach.blender.org/wp-content/uploads/title-anims-01.jpg", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8" },
     { name: "Nature Test Stream 2", icon: "https://durian.blender.org/wp-content/uploads/2010/06/sintel_poster.jpg", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_advanced/bipbop_16x9_variant.m3u8" },
@@ -31,7 +30,7 @@ const movieVideosPool = [
     { title: "We Are Going On Bullrun", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4", poster: "https://durian.blender.org/wp-content/uploads/2010/06/sintel_poster.jpg" }
 ];
 
-// 5 Kategori x 5 Kanal = 25 Canlı Kanal Oluşturma
+// 5 Kategori x 5 Kanal = 25 Canlı Kanal
 const allLiveStreams = [];
 let streamIdCounter = 100;
 for (let cat = 1; cat <= 5; cat++) {
@@ -52,7 +51,7 @@ for (let cat = 1; cat <= 5; cat++) {
     }
 }
 
-// 30 Adet VOD Film Oluşturma
+// 30 Adet VOD Film
 const allMovies = [];
 for (let i = 1; i <= 30; i++) {
     const template = movieVideosPool[(i - 1) % movieVideosPool.length];
@@ -87,7 +86,6 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // 5 Canlı TV Kategorisi
     if (action === 'get_live_categories') {
         return res.json([
             { category_id: "1", category_name: "Canlı TV 1", parent_id: 0 },
@@ -123,9 +121,7 @@ app.get('/player_api.php', (req, res) => {
             info: {
                 name: movie.name,
                 movie_image: movie.stream_icon,
-                description: "Bu içerik uygulamanın testi için hazırlanmış yüksek kaliteli açık kaynaklı demo filmdir.",
-                director: "Open Source Community",
-                cast: "Test Cast",
+                description: "Test demo filmidir.",
                 genre: movie.genre,
                 releasedate: `${movie.year}-01-01`,
                 rating: movie.rating
@@ -137,20 +133,20 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// Canlı Yayın Yönlendirmesi
-app.get('/live/:username/:password/:streamId.ts', (req, res) => {
-    const { streamId } = req.params;
-    const stream = allLiveStreams.find(s => s.stream_id.toString() === streamId);
+// UZANTI BAĞIMSIZ Canlı Yayın Yönlendirmesi (.ts, .m3u8 veya uzantısız ne gelirse gelsin)
+app.get('/live/:username/:password/:streamParam', (req, res) => {
+    const rawId = req.params.streamParam.split('.')[0]; // Uzantıyı temizle
+    const stream = allLiveStreams.find(s => s.stream_id.toString() === rawId);
     if (stream) {
         return res.redirect(stream.direct_source);
     }
     return res.redirect('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
 });
 
-// VOD (Film) Yönlendirmesi
-app.get('/movie/:username/:password/:streamId.mp4', (req, res) => {
-    const { streamId } = req.params;
-    const movie = allMovies.find(m => m.stream_id.toString() === streamId);
+// UZANTI BAĞIMSIZ VOD Film Yönlendirmesi (.mp4, .mkv veya uzantısız ne gelirse gelsin)
+app.get('/movie/:username/:password/:movieParam', (req, res) => {
+    const rawId = req.params.movieParam.split('.')[0]; // Uzantıyı temizle
+    const movie = allMovies.find(m => m.stream_id.toString() === rawId);
     if (movie) {
         return res.redirect(movie.video_url);
     }
