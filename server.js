@@ -9,20 +9,42 @@ const CREDENTIALS = {
 };
 
 const STABLE_VIDEO_URL = "https://content.jwplatform.com/manifests/vM7nH0Kl.m3u8";
+const APPLE_LIVE_TEST_URL = "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_16x9/bipbop_16x9_variant.m3u8";
 
-// %100 Temiz, Sci-Fi (Bilim Kurgu) ve Sinematik Telifsiz Görseller
+// %100 Temiz Sci-Fi ve Sinematik Posterler
 const safeSciFiPosters = [
-    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800", // Sinema perdesi
-    "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800", // Film projektörü
-    "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800", // Sinematik ışık
-    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800", // Sci-Fi Uzay / Gezegen
-    "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800", // Bilim kurgu nebula
-    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800", // Parlayan teknoloji / sci-fi
-    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800", // Sinema salonu
-    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"  // Soyut sinema
+    "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800",
+    "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=800",
+    "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=800",
+    "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800",
+    "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800",
+    "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800",
+    "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800",
+    "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
-// 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
+// 1. Canlı TV: 5 Kategori x 5 Kanal = 25 Kanal (Apple Test Linki)
+const allLiveStreams = [];
+let liveIdCounter = 100;
+for (let cat = 1; cat <= 5; cat++) {
+    for (let i = 1; i <= 5; i++) {
+        liveIdCounter++;
+        allLiveStreams.push({
+            num: allLiveStreams.length + 1,
+            name: `Canlı TV ${cat} - Kanal ${i} (Apple Test)`,
+            stream_type: "live",
+            stream_id: liveIdCounter,
+            stream_icon: safeSciFiPosters[(liveIdCounter) % safeSciFiPosters.length],
+            epg_channel_id: `ch_${cat}_${i}`,
+            added: "1680000000",
+            category_id: `${cat}`,
+            direct_source: APPLE_LIVE_TEST_URL,
+            container_extension: "m3u8"
+        });
+    }
+}
+
+// 2. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
 const allMovies = [];
 let movieIdCounter = 3000;
 for (let cat = 1; cat <= 5; cat++) {
@@ -45,7 +67,7 @@ for (let cat = 1; cat <= 5; cat++) {
     }
 }
 
-// 2. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi
+// 3. Diziler: 5 Kategori (Test 1 - Test 5) x 1 Dizi = 5 Dizi
 const allSeries = [];
 for (let cat = 1; cat <= 5; cat++) {
     allSeries.push({
@@ -75,8 +97,23 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    if (action === 'get_live_categories' || action === 'get_live_streams') {
-        return res.json([]);
+    // Canlı TV Kategorileri
+    if (action === 'get_live_categories') {
+        return res.json([
+            { category_id: "1", category_name: "Canlı TV 1", parent_id: 0 },
+            { category_id: "2", category_name: "Canlı TV 2", parent_id: 0 },
+            { category_id: "3", category_name: "Canlı TV 3", parent_id: 0 },
+            { category_id: "4", category_name: "Canlı TV 4", parent_id: 0 },
+            { category_id: "5", category_name: "Canlı TV 5", parent_id: 0 }
+        ]);
+    }
+
+    if (action === 'get_live_streams') {
+        const catId = req.query.category_id;
+        if (catId) {
+            return res.json(allLiveStreams.filter(s => s.category_id === catId));
+        }
+        return res.json(allLiveStreams);
     }
 
     // Film Kategorileri (Test 1 - Test 5)
@@ -184,6 +221,10 @@ app.get('/player_api.php', (req, res) => {
 });
 
 // Yönlendirmeler
+app.get('/live/:username/:password/:streamParam', (req, res) => {
+    return res.redirect(301, APPLE_LIVE_TEST_URL);
+});
+
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
@@ -200,4 +241,4 @@ app.get('/:username/:password/:param', (req, res, next) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
 
-app.listen(PORT, () => logo = console.log(`Xtream Mock Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Xtream Mock Server running on port ${PORT}`));
