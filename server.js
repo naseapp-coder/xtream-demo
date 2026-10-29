@@ -180,7 +180,7 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-.json({ error: "Unknown action" });
+    res.json({ error: "Unknown action" });
 });
 
 // Yönlendirmeler
@@ -200,4 +200,4 @@ app.get('/:username/:password/:param', (req, res, next) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
 
-app.listen(PORT, () => console.log(`Xtream Mock Server running on port ${PORT}`));
+app.listen(PORT, () => logo = console.log(`Xtream Mock Server running on port ${PORT}`));
