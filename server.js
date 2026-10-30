@@ -167,7 +167,7 @@ app.get('/player_api.php', (req, res) => {
             { category_id: "200", category_name: "Test 2 (Diziler)", parent_id: 0 },
             { category_id: "300", category_name: "Test 3 (Diziler)", parent_id: 0 },
             { category_id: "400", category_name: "Test 4 (Diziler)", parent_id: 0 },
-            { category_id: "500", category_name: "Test 5 (Diziler)", parent_id: 0 }
+            { category_id: "500", category_name: "Test 5 (Diziler)", parent_ID: 0 }
         ]);
     }
 
@@ -221,12 +221,12 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// Canlı yayın isteklerini yakalayıp film/diziye yönlenmesini engelliyoruz (Yayın Yok / 404 döner)
+// Canlı yayın isteklerini (uzantılı veya uzantısız) kesin olarak yakala ve film/diziye gitmesini engelle
 app.get('/live/:username/:password/:streamParam', (req, res) => {
     return res.status(404).send("Live Stream Not Available");
 });
 
-// Yönlendirmeler (Filmler ve Diziler için aktif kalmaya devam eder)
+// Filmler ve Diziler için yönlendirmeler aktif kalmaya devam eder
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
@@ -235,9 +235,16 @@ app.get('/series/:username/:password/:seriesParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
 
+// Diğer tanımlı olmayan tüm istekler (canlı yayın uzantılı denemeleri dahil)
 app.get('/:username/:password/:param', (req, res, next) => {
-    const { username } = req.params;
-    if (['player_api.php', 'live', 'movie', 'series'].includes(username)) {
+    const { username, param } = req.params;
+    
+    // Eğer istek 'live' ile ilgili bir şeyse ASLA yönlendirme yapma, 404 dön
+    if (username === 'live' || (param && param.includes('live'))) {
+        return res.status(404).send("Live Stream Not Available");
+    }
+
+    if (['player_api.php', 'movie', 'series'].includes(username)) {
         return next();
     }
     return res.redirect(301, STABLE_VIDEO_URL);
