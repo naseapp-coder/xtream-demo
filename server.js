@@ -22,6 +22,28 @@ const safeSciFiPosters = [
     "https://images.unsplash.com/photo-1563089145-599997674d42?w=800"
 ];
 
+// Canlı TV: 5 Klasör (test1 - test5) x 5 Kanal = 25 Kanal
+const allLiveChannels = [];
+let liveIdCounter = 1000;
+for (let cat = 1; cat <= 5; cat++) {
+    for (let i = 1; i <= 5; i++) {
+        liveIdCounter++;
+        allLiveChannels.push({
+            stream_id: liveIdCounter,
+            name: `TEST - YAYIN YOK ! - ${i}`,
+            stream_type: "live",
+            stream_icon: safeSciFiPosters[(liveIdCounter) % safeSciFiPosters.length],
+            epg_channel_id: null,
+            added: "1700000000",
+            category_id: `live_cat_${cat}`,
+            custom_sid: "",
+            tv_archive: 0,
+            direct_source: "",
+            tv_archive_duration: 0
+        });
+    }
+}
+
 // 1. Filmler (VOD): 5 Kategori (Test 1 - Test 5) x 5 Film = 25 Film
 const allMovies = [];
 let movieIdCounter = 3000;
@@ -75,9 +97,24 @@ app.get('/player_api.php', (req, res) => {
         });
     }
 
-    // Canlı TV (Tamamen Kaldırıldı)
-    if (action === 'get_live_categories' || action === 'get_live_streams') {
-        return res.json([]);
+    // Canlı TV Kategorileri (test1 - test5)
+    if (action === 'get_live_categories') {
+        return res.json([
+            { category_id: "live_cat_1", category_name: "test1", parent_id: 0 },
+            { category_id: "live_cat_2", category_name: "test2", parent_id: 0 },
+            { category_id: "live_cat_3", category_name: "test3", parent_id: 0 },
+            { category_id: "live_cat_4", category_name: "test4", parent_id: 0 },
+            { category_id: "live_cat_5", category_name: "test5", parent_id: 0 }
+        ]);
+    }
+
+    // Canlı TV Kanalları
+    if (action === 'get_live_streams') {
+        const catId = req.query.category_id;
+        if (catId) {
+            return res.json(allLiveChannels.filter(c => c.category_id === catId));
+        }
+        return res.json(allLiveChannels);
     }
 
     // Film Kategorileri (Test 1 - Test 5)
