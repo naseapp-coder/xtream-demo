@@ -221,7 +221,12 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// Yönlendirmeler
+// Canlı yayın isteklerini yakalayıp film/diziye yönlenmesini engelliyoruz (Yayın Yok / 404 döner)
+app.get('/live/:username/:password/:streamParam', (req, res) => {
+    return res.status(404).send("Live Stream Not Available");
+});
+
+// Yönlendirmeler (Filmler ve Diziler için aktif kalmaya devam eder)
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
