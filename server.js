@@ -81,6 +81,11 @@ for (let cat = 1; cat <= 5; cat++) {
     });
 }
 
+// --- KRİTİK: /live/ ile başlayan TÜM istekleri en baştan kesinlikle kes ve hiçbir yere yönlendirme ---
+app.use('/live', (req, res) => {
+    return res.status(404).send('');
+});
+
 // Player API
 app.get('/player_api.php', (req, res) => {
     const { username, password, action } = req.query;
@@ -136,7 +141,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allMovies);
     }
 
-    // Film Detayı (Blender Atıfları ile)
+    // Film Detayı
     if (action === 'get_vod_info') {
         const vodId = parseInt(req.query.vod_id);
         const movie = allMovies.find(m => m.stream_id === vodId) || allMovies[0];
@@ -167,7 +172,7 @@ app.get('/player_api.php', (req, res) => {
             { category_id: "200", category_name: "Test 2 (Diziler)", parent_id: 0 },
             { category_id: "300", category_name: "Test 3 (Diziler)", parent_id: 0 },
             { category_id: "400", category_name: "Test 4 (Diziler)", parent_id: 0 },
-            { category_id: "500", category_name: "Test 5 (Diziler)", parent_ID: 0 }
+            { category_id: "500", category_name: "Test 5 (Diziler)", parent_id: 0 }
         ]);
     }
 
@@ -179,7 +184,7 @@ app.get('/player_api.php', (req, res) => {
         return res.json(allSeries);
     }
 
-    // Dizi Detayı (5 Bölüm)
+    // Dizi Detayı
     if (action === 'get_series_info') {
         const seriesId = parseInt(req.query.series_id);
         const series = allSeries.find(s => s.series_id === seriesId) || allSeries[0];
@@ -221,12 +226,7 @@ app.get('/player_api.php', (req, res) => {
     res.json({ error: "Unknown action" });
 });
 
-// Canlı yayın isteklerini (uzantılı veya uzantısız) kesin olarak yakala ve film/diziye gitmesini engelle
-app.get('/live/:username/:password/:streamParam', (req, res) => {
-    return res.status(404).send("Live Stream Not Available");
-});
-
-// Filmler ve Diziler için yönlendirmeler aktif kalmaya devam eder
+// Yalnızca Filmler ve Diziler için yönlendirmeler aktif
 app.get('/movie/:username/:password/:movieParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
@@ -235,15 +235,8 @@ app.get('/series/:username/:password/:seriesParam', (req, res) => {
     return res.redirect(301, STABLE_VIDEO_URL);
 });
 
-// Diğer tanımlı olmayan tüm istekler (canlı yayın uzantılı denemeleri dahil)
 app.get('/:username/:password/:param', (req, res, next) => {
-    const { username, param } = req.params;
-    
-    // Eğer istek 'live' ile ilgili bir şeyse ASLA yönlendirme yapma, 404 dön
-    if (username === 'live' || (param && param.includes('live'))) {
-        return res.status(404).send("Live Stream Not Available");
-    }
-
+    const { username } = req.params;
     if (['player_api.php', 'movie', 'series'].includes(username)) {
         return next();
     }
